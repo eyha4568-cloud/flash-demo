@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#1E4FD8">
+<title>فلاش - نسخة تجريبية</title>
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+:root{--p:#1E4FD8;--g:#16A34A;--a:#F59E0B;--bg:#F5F7FB;--card:#fff;--tx:#0F172A;--mut:#64748B;--br:#E2E8F0;--red:#DC2626}
+@media(prefers-color-scheme:dark){:root{--bg:#0B1220;--card:#131C2E;--tx:#E5EAF3;--mut:#94A3B8;--br:#243049}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:Tahoma,Arial,sans-serif;line-height:1.6}
+header{background:var(--p);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:5}
+header h1{font-size:19px;margin:0;flex:1}
+header a{color:#fff;text-decoration:none;font-size:14px;background:rgba(255,255,255,.18);padding:6px 12px;border-radius:20px}
+main{max-width:720px;margin:0 auto;padding:16px}
+.banner{background:#FEF3C7;color:#78350F;border-radius:12px;padding:10px 14px;font-size:13px;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--br);border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.svc{background:var(--card);border:2px solid var(--br);border-radius:14px;padding:12px 6px;text-align:center;cursor:pointer;font-size:14px}
+.svc.on{border-color:var(--p);background:rgba(30,79,216,.08)}
+.svc span{display:block;font-size:26px}
+label{display:block;font-weight:bold;margin:12px 0 4px;font-size:14px}
+input,textarea,select{width:100%;padding:12px;border:1px solid var(--br);border-radius:12px;font:inherit;background:var(--card);color:var(--tx)}
+button{font:inherit;border:0;border-radius:12px;padding:12px 18px;cursor:pointer;background:var(--p);color:#fff;font-weight:bold}
+button.sec{background:transparent;color:var(--p);border:1px solid var(--p)}
+button.ok{background:var(--g)} button.no{background:var(--red)} button.em{background:var(--a);color:#111}
+button.sm{padding:8px 12px;font-size:13px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{display:inline-block;font-size:12px;padding:3px 10px;border-radius:20px;background:var(--br);color:var(--tx)}
+.chip.g{background:#DCFCE7;color:#166534}.chip.a{background:#FEF3C7;color:#92400E}.chip.b{background:#DBEAFE;color:#1E40AF}.chip.r{background:#FEE2E2;color:#991B1B}
+.big{display:grid;gap:12px;margin-top:20px}
+.big a{display:block;background:var(--card);border:1px solid var(--br);border-radius:18px;padding:20px;text-decoration:none;color:var(--tx)}
+.big b{font-size:19px;display:block}.big small{color:var(--mut)}
+.steps{display:flex;gap:4px;margin:10px 0}.steps i{flex:1;height:6px;border-radius:3px;background:var(--br)}.steps i.on{background:var(--g)}
+.mut{color:var(--mut);font-size:13px}
+.stars button{background:none;font-size:28px;padding:2px;color:#CBD5E1}.stars button.on{color:var(--a)}
+.stat{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.stat div{text-align:center}.stat b{font-size:24px;display:block;color:var(--p)}
+.hr{height:1px;background:var(--br);margin:10px 0}
+</style>
+</head>
+<body>
+<header><h1 id="ttl">⚡ فلاش</h1><a href="#/" id="home">الرئيسية</a></header>
+<main id="app"></main>
+<script>
+"use strict";
+const SERVICES={"كهرباء":"⚡","سباكة":"🚰","تكييف":"❄️","نجارة":"🪚","دهانات":"🎨","تشطيب":"🏠","محارة":"🧱","بناء":"🏗️","تركيب سيراميك":"🔲","ألوميتال وزجاج":"🪟","أقفال وأبواب":"🔐","تنظيف":"🧹","نقل وتركيب أثاث":"🛋️","مكافحة حشرات":"🐜","صيانة أجهزة منزلية":"🔧"};
+const FEE=0.10, MAXC=3;
+const STEPS=[["accepted","تم القبول"],["ontheway","في الطريق"],["arrived","وصل"],["done","تم الانتهاء"]];
+function seed(){
+  const n=["أحمد علي","محمود سعيد","محمد حسن","كريم عادل","ياسر فتحي","خالد منصور"];
+  const s=Object.keys(SERVICES);
+  return {reqs:[],nid:1,techs:n.map((x,i)=>({id:i+1,name:x,svc:[s[i%15],s[(i*3+1)%15],s[(i*5+2)%15]],rating:[4.9,4.8,4.6,4.7,4.3,4.8][i],jobs:[64,31,12,25,5,48][i],approved:i<5,doc:true}))};
+}
+let S; try{S=JSON.parse(localStorage.getItem("flash_demo")||"null")}catch(e){S=null}
+if(!S||!S.techs)S=seed();
+function save(){try{localStorage.setItem("flash_demo",JSON.stringify(S))}catch(e){}}
+const $=(h)=>{const d=document.createElement("div");d.innerHTML=h;return d};
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const trusted=t=>t.rating>=4.7&&t.jobs>=20;
+const money=n=>Math.round(n)+" ج.م";
+const app=document.getElementById("app");
+let draft={svc:"",urgent:false}, techId=+(sessionStorage.getItem("tid")||1);
+function route(){
+  const h=location.hash||"#/";
+  document.getElementById("home").style.display=h==="#/"?"none":"";
+  document.getElementById("ttl").textContent=h.startsWith("#/c")?"⚡ فلاش - العميل":h.startsWith("#/t")?"⚡ فلاش للفنيين":h.startsWith("#/a")?"⚡ إدارة فلاش":"⚡ فلاش";
+  (h.startsWith("#/c")?customer:h.startsWith("#/t")?tech:h.startsWith("#/a")?admin:landing)();
+  scrollTo(0,0);
+}
+function banner(){return '<div class="banner">نسخة تجريبية: البيانات محفوظة في متصفحك أنت بس، ومش متشاركة مع حد. للتشغيل الحقيقي مع عملاء وفنيين استخدم النسخة الكاملة.</div>'}
+function landing(){
+  app.innerHTML=banner()+`<h2>فني موثوق لحد باب بيتك</h2><p class="mut">اطلب أي خدمة، استقبل عروض من فنيين قريبين، وفاوض على السعر.</p>
+  <div class="big"><a href="#/c"><b>🏠 أنا عميل</b><small>اطلب خدمة واستلم العروض</small></a>
+  <a href="#/t"><b>🛠️ أنا فني</b><small>شوف الطلبات وابعت عروضك</small></a>
+  <a href="#/a"><b>📊 المدير</b><small>اعتماد الفنيين ومتابعة الطلبات</small></a></div>
+  <p class="mut" style="margin-top:20px">جرّب الدورة كاملة: اطلب كعميل ← ابعت عرض كفني ← ارجع للعميل واقبل ← حدّث الحالة كفني ← قيّم كعميل.</p>`;
+}
+/* ---------- customer ---------- */
+function customer(){
+  const mine=S.reqs.slice().reverse();
+  app.innerHTML=banner()+`<div class="card"><h3 style="margin-top:0">اطلب خدمة</h3>
+  <div class="grid" id="sv">${Object.keys(SERVICES).map(k=>`<div class="svc ${draft.svc===k?"on":""}" data-k="${k}"><span>${SERVICES[k]}</span>${k}</div>`).join("")}</div>
+  <label>وصف المشكلة</label><textarea id="d" rows="3" placeholder="مثلاً: ماسورة المطبخ بتسرّب"></textarea>
+  <label>العنوان (اكتبه بحرية)</label><input id="ad" placeholder="مثلاً: 15 شارع النصر، مدينة نصر، القاهرة">
+  <label><input type="checkbox" id="em" style="width:auto"> 🚨 طلب طارئ (سعر أعلى وأولوية)</label>
+  <p><button id="go">إرسال الطلب</button></p></div>
+  <h3>طلباتي</h3>${mine.length?"":'<p class="mut">لسه معندكش طلبات.</p>'}<div id="list"></div>`;
+  app.querySelectorAll(".svc").forEach(e=>e.onclick=()=>{draft.svc=e.dataset.k;app.querySelectorAll(".svc").forEach(x=>x.classList.toggle("on",x===e))});
+  document.getElementById("go").onclick=()=>{
+    const d=document.getElementById("d").value.trim(),a=document.getElementById("ad").value.trim();
+    if(!draft.svc)return alert("اختار الخدمة الأول");
+    if(d.length<5)return alert("اكتب وصف للمشكلة");
+    if(a.length<5)return alert("اكتب العنوان");
+    S.reqs.push({id:S.nid++,svc:draft.svc,desc:d,addr:a,urgent:document.getElementById("em").checked,status:"open",offers:[],tech:null,price:null,rating:0});
+    draft.svc="";save();customer();
+  };
+  const L=document.getElementById("list");
+  mine.forEach(r=>L.appendChild(custCard(r)));
+}
+function histLine(o){return o.hist.map(h=>(h.by==="t"?"الفني":"أنت")+": "+money(h.p)).join(" ← ")}
+function custCard(r){
+  const el=$("<div class='card'></div>").firstChild;
+  let h=`<div class="row"><b>${SERVICES[r.svc]} ${esc(r.svc)}</b>${r.urgent?'<span class="chip a">طارئ</span>':""}<span class="chip ${r.status==="done"?"g":"b"}">${r.status==="open"?"بانتظار العروض":r.status==="done"?"مكتمل":"جاري"}</span></div>
+  <div class="mut">${esc(r.desc)}<br>📍 ${esc(r.addr)}</div>`;
+  if(r.status==="open"){
+    h+=`<div class="hr"></div>`+(r.offers.length?"":'<p class="mut">هتظهر العروض هنا لما الفنيين يبعتوها (جرّب من صفحة الفني).</p>');
+    r.offers.forEach(o=>{
+      const t=S.techs.find(x=>x.id===o.tech),last=o.hist[o.hist.length-1],myTurn=last.by==="t"&&o.st==="pending";
+      h+=`<div class="card" style="margin:8px 0"><div class="row"><b>${esc(t.name)}</b>${trusted(t)?'<span class="chip g">✔ فني موثوق</span>':""}<span class="chip">⭐ ${t.rating}</span><span class="chip">${t.jobs} شغلانة</span></div>
+      <div>العرض الحالي: <b>${money(last.p)}</b></div><div class="mut">${histLine(o)}</div>
+      ${o.st==="rejected"?'<span class="chip r">مرفوض</span>':myTurn?`<div class="row" style="margin-top:8px"><button class="ok sm" data-a="acc" data-o="${o.id}">قبول</button>
+      ${o.hist.length<MAXC+1?`<button class="sec sm" data-a="ctr" data-o="${o.id}">تفاوض</button>`:'<span class="mut">وصلت للحد الأقصى للتفاوض (3 جولات)</span>'}
+      <button class="no sm" data-a="rej" data-o="${o.id}">رفض</button></div>`:'<span class="chip a">بانتظار رد الفني</span>'}</div>`;
+    });
+  }else{
+    const t=S.techs.find(x=>x.id===r.tech),i=STEPS.findIndex(s=>s[0]===r.status),fee=r.price*FEE;
+    h+=`<div class="hr"></div><div class="row"><b>${esc(t.name)}</b>${trusted(t)?'<span class="chip g">✔ فني موثوق</span>':""}</div>
+    <div class="steps">${STEPS.map((s,k)=>`<i class="${k<=i?"on":""}"></i>`).join("")}</div><div>${STEPS[i][1]}</div>
+    <div class="mut">السعر المتفق عليه ${money(r.price)} (منها رسوم المنصة ${money(fee)}) • ضمان 7 أيام على الشغل</div>`;
+    if(r.status==="done"&&!r.rating)h+=`<div class="hr"></div><b>قيّم الفني</b><div class="stars">${[1,2,3,4,5].map(n=>`<button data-r="${n}" data-q="${r.id}">★</button>`).join("")}</div>`;
+    if(r.rating)h+=`<div>تقييمك: ${"★".repeat(r.rating)}</div>`;
+  }
+  el.innerHTML=h;
+  el.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{
+    const o=r.offers.find(x=>x.id==b.dataset.o),last=o.hist[o.hist.length-1];
+    if(b.dataset.a==="acc"){o.st="accepted";r.status="accepted";r.tech=o.tech;r.price=last.p}
+    if(b.dataset.a==="rej")o.st="rejected";
+    if(b.dataset.a==="ctr"){const v=+prompt("اكتب السعر اللي تقترحه (ج.م):",Math.round(last.p*0.85));if(!v||v<=0)return;o.hist.push({by:"c",p:v})}
+    save();customer();
+  });
+  el.querySelectorAll("[data-r]").forEach(b=>{b.onmouseover=()=>el.querySelectorAll("[data-r]").forEach(x=>x.classList.toggle("on",+x.dataset.r<=+b.dataset.r));
+    b.onclick=()=>{r.rating=+b.dataset.r;const t=S.techs.find(x=>x.id===r.tech);t.rating=Math.round((t.rating*t.jobs+r.rating)/(t.jobs+1)*10)/10;t.jobs++;save();customer()}});
+  return el;
+}
+/* ---------- technician ---------- */
+function tech(){
+  const me=S.techs.find(x=>x.id===techId)||S.techs[0];
+  app.innerHTML=banner()+`<div class="card"><label style="margin-top:0">اختار فني للتجربة</label><select id="who">${S.techs.map(t=>`<option value="${t.id}" ${t.id===me.id?"selected":""}>${esc(t.name)}${t.approved?"":" (بانتظار الاعتماد)"}</option>`).join("")}</select>
+  <div class="row" style="margin-top:8px"><span class="chip">⭐ ${me.rating}</span><span class="chip">${me.jobs} شغلانة</span>${trusted(me)?'<span class="chip g">✔ فني موثوق</span>':`<span class="chip a">باقي ${Math.max(0,20-me.jobs)} شغلانة (وتقييم 4.7+) للشارة</span>`}</div>
+  <div class="mut">تخصصاته: ${me.svc.join("، ")}</div></div><div id="b"></div>`;
+  document.getElementById("who").onchange=e=>{techId=+e.target.value;sessionStorage.setItem("tid",techId);tech()};
+  const B=document.getElementById("b");
+  if(!me.approved){B.innerHTML='<div class="card">حسابك لسه بانتظار اعتماد المدير. افتح صفحة المدير واعتمده.</div>';return}
+  const open=S.reqs.filter(r=>r.status==="open"&&me.svc.includes(r.svc));
+  const mineJobs=S.reqs.filter(r=>r.tech===me.id&&r.status!=="open");
+  B.innerHTML="<h3>طلبات متاحة</h3>";
+  if(!open.length)B.innerHTML+='<p class="mut">مفيش طلبات في تخصصك دلوقتي. اطلب خدمة كعميل من تخصصه.</p>';
+  open.forEach(r=>{
+    const o=r.offers.find(x=>x.tech===me.id),el=$("<div class='card'></div>").firstChild;
+    let h=`<div class="row"><b>${SERVICES[r.svc]} ${esc(r.svc)}</b>${r.urgent?'<span class="chip a">طارئ</span>':""}</div><div class="mut">${esc(r.desc)}<br>📍 المنطقة: ${esc(r.addr.split(/[،,]/).slice(-2).join("،").trim()||r.addr)} (العنوان الكامل يظهر بعد القبول)</div>`;
+    if(!o)h+=`<div class="row" style="margin-top:8px"><input type="number" id="p${r.id}" placeholder="سعرك بالجنيه" style="max-width:160px"><button data-s="${r.id}">إرسال عرض</button></div>`;
+    else{const last=o.hist[o.hist.length-1],myTurn=last.by==="c"&&o.st==="pending";
+      h+=`<div class="hr"></div><div class="mut">${histLine(o).replace(/الفني/g,"أنت").replace(/أنت: (\d+ ج\.م)( ← |$)/,(m)=>m)}</div>`;
+      if(o.st==="rejected")h+='<span class="chip r">العميل رفض</span>';
+      else if(myTurn)h+=`<div>العميل اقترح <b>${money(last.p)}</b></div><div class="row" style="margin-top:6px"><button class="ok sm" data-t="acc" data-r="${r.id}">قبول</button>${o.hist.length<MAXC+1?`<button class="sec sm" data-t="ctr" data-r="${r.id}">سعر مضاد</button>`:'<span class="mut">انتهت جولات التفاوض</span>'}<button class="no sm" data-t="rej" data-r="${r.id}">رفض</button></div>`;
+      else h+='<span class="chip a">بانتظار رد العميل</span>'}
+    el.innerHTML=h;B.appendChild(el);
+    el.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{const v=+document.getElementById("p"+r.id).value;if(!v||v<=0)return alert("اكتب سعر صح");r.offers.push({id:r.id*100+me.id,tech:me.id,st:"pending",hist:[{by:"t",p:v}]});save();tech()});
+    el.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{const last=o.hist[o.hist.length-1];
+      if(b.dataset.t==="acc"){o.st="accepted";r.status="accepted";r.tech=me.id;r.price=last.p}
+      if(b.dataset.t==="rej")o.st="rejected";
+      if(b.dataset.t==="ctr"){const v=+prompt("اكتب السعر المضاد (ج.م):",Math.round(last.p*1.1));if(!v||v<=0)return;o.hist.push({by:"t",p:v})}
+      save();tech()});
+  });
+  B.appendChild($("<h3>شغلي</h3>"));
+  if(!mineJobs.length)B.appendChild($('<p class="mut">لسه مفيش شغل مقبول.</p>'));
+  let earn=0;
+  mineJobs.forEach(r=>{
+    const i=STEPS.findIndex(s=>s[0]===r.status),el=$("<div class='card'></div>").firstChild;if(r.status==="done")earn+=r.price*(1-FEE);
+    el.innerHTML=`<div class="row"><b>${SERVICES[r.svc]} ${esc(r.svc)}</b><span class="chip ${r.status==="done"?"g":"b"}">${STEPS[i][1]}</span></div>
+    <div class="mut">📍 ${esc(r.addr)}<br>${esc(r.desc)}<br>سعرك بعد رسوم المنصة: ${money(r.price*(1-FEE))}</div>
+    <div class="steps">${STEPS.map((s,k)=>`<i class="${k<=i?"on":""}"></i>`).join("")}</div>
+    ${i<3?`<button class="sm" data-n="${r.id}">${["ابدأ الطريق","وصلت","تم الانتهاء"][i]}</button>`:""}`;
+    B.appendChild(el);
+    const b=el.querySelector("[data-n]");if(b)b.onclick=()=>{r.status=STEPS[i+1][0];save();tech()};
+  });
+  if(earn)B.insertAdjacentHTML("beforeend",`<div class="card"><b>أرباحك المكتملة:</b> ${money(earn)}</div>`);
+}
+/* ---------- admin ---------- */
+function admin(){
+  const done=S.reqs.filter(r=>r.status==="done"),rev=done.reduce((a,r)=>a+r.price*FEE,0);
+  app.innerHTML=banner()+`<div class="card stat"><div><b>${S.reqs.length}</b>طلب</div><div><b>${done.length}</b>مكتمل</div><div><b>${Math.round(rev)}</b>عمولة ج.م</div></div>
+  <h3>الفنيين</h3><div id="t"></div><h3>آخر الطلبات</h3><div id="r"></div><p><button class="no sm" id="rs">مسح كل البيانات التجريبية</button></p>`;
+  const T=document.getElementById("t");
+  S.techs.forEach(t=>{const e=$("<div class='card'></div>").firstChild;
+    e.innerHTML=`<div class="row"><b>${esc(t.name)}</b>${trusted(t)?'<span class="chip g">✔ موثوق</span>':""}<span class="chip ${t.approved?"g":"a"}">${t.approved?"معتمد":"بانتظار الاعتماد"}</span></div><div class="mut">${t.svc.join("، ")} • ⭐ ${t.rating} • ${t.jobs} شغلانة</div>
+    <button class="sm ${t.approved?"no":"ok"}" style="margin-top:8px">${t.approved?"إيقاف":"اعتماد"}</button>`;
+    e.querySelector("button").onclick=()=>{t.approved=!t.approved;save();admin()};T.appendChild(e)});
+  const R=document.getElementById("r");
+  if(!S.reqs.length)R.innerHTML='<p class="mut">مفيش طلبات لسه.</p>';
+  S.reqs.slice().reverse().slice(0,15).forEach(r=>R.insertAdjacentHTML("beforeend",`<div class="card"><b>${SERVICES[r.svc]} ${esc(r.svc)}</b> <span class="chip">${r.status}</span><div class="mut">${esc(r.addr)} • ${r.offers.length} عرض${r.price?" • "+money(r.price):""}</div></div>`));
+  document.getElementById("rs").onclick=()=>{if(confirm("مسح كل البيانات؟")){S=seed();save();admin()}};
+}
+addEventListener("hashchange",route);route();
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
