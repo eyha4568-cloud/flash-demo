@@ -67,16 +67,27 @@ button.ok{background:var(--g)}button.no{background:var(--red)}button.em{backgrou
 "use strict";
 const SERVICES={"كهرباء":"⚡","سباكة":"🚰","تكييف":"❄️","نجارة":"🪚","دهانات":"🎨","تشطيب":"🏠","محارة":"🧱","بناء":"🏗️","تركيب سيراميك":"🔲","ألوميتال وزجاج":"🪟","أقفال وأبواب":"🔐","تنظيف":"🧹","نقل وتركيب أثاث":"🛋️","مكافحة حشرات":"🐜","صيانة أجهزة منزلية":"🔧"};
 const DEF_PRICE={"كهرباء":[150,600],"سباكة":[150,700],"تكييف":[250,1200],"نجارة":[200,1500],"دهانات":[500,5000],"تشطيب":[1000,15000],"محارة":[600,4000],"بناء":[1500,20000],"تركيب سيراميك":[400,6000],"ألوميتال وزجاج":[300,3500],"أقفال وأبواب":[150,900],"تنظيف":[300,2000],"نقل وتركيب أثاث":[400,3500],"مكافحة حشرات":[300,1500],"صيانة أجهزة منزلية":[150,900]};
-const FEE=0.10,MAXC=3,WARRANTY=7,ADMIN_HASH="4b43ed9d53e0d036a6cfcef14603f385b4051e4d8f3507fd590ffe6e65f22c8f";
+const FEE=0.10,MAXC=3,WARRANTY=7,ADMIN_HASH="177057e3fcbba3dc4cc7d05f9b4528484b3c5af0dd08e61e553d92674a04ecb7";
 const STEPS=[["accepted","تم القبول","✅"],["ontheway","الفني في الطريق","🚗"],["arrived","وصل","📍"],["working","جاري الشغل","🛠️"],["done","تم الانتهاء","🎉"]];
 const TAGS=["ملتزم بالمواعيد","نضيف","محترف","سعر عادل"];
 const QUICK_C=["أنت فين دلوقتي؟","هل معاك الأدوات؟","العمارة فيها مصعد","تمام، مستنيك"],QUICK_T=["أنا في الطريق","وصلت قدام العمارة","محتاج قطع غيار، هبلغك بالسعر","خلصت الشغل"];
-function seed(){const n=["أحمد علي","محمود سعيد","محمد حسن","كريم عادل","ياسر فتحي","خالد منصور"],s=Object.keys(SERVICES);
-  return{reqs:[],nid:1,tnid:7,mult:1.5,reports:[],prices:JSON.parse(JSON.stringify(DEF_PRICE)),
-  techs:n.map((x,i)=>({id:i+1,name:x,phone:"010"+(20000000+i*1234567),yrs:[9,6,4,7,2,11][i],svc:[s[i%15],s[(i*3+1)%15],s[(i*5+2)%15]],rating:[4.9,4.8,4.6,4.7,4.3,4.8][i],jobs:[64,31,12,25,5,48][i],cancel:[0.01,0.02,0.1,0.03,0.08,0.01][i],approved:i<5,online:true,docs:true}))}}
-let S;try{S=JSON.parse(localStorage.getItem("flash_demo2")||"null")}catch(e){S=null}
-if(!S||!S.techs)S=seed();
-const save=()=>{try{localStorage.setItem("flash_demo2",JSON.stringify(S))}catch(e){}};
+function sha256(m){const K=[];let c=0;for(let n=2;c<64;n++){let p=1;for(let d=2;d*d<=n;d++)if(n%d==0){p=0;break}if(p){K[c++]=(Math.pow(n,1/3)%1)*4294967296|0}}
+ const H=[];c=0;for(let n=2;c<8;n++){let p=1;for(let d=2;d*d<=n;d++)if(n%d==0){p=0;break}if(p){H[c++]=(Math.sqrt(n)%1)*4294967296|0}}
+ const b=Array.from(new TextEncoder().encode(m)),l=b.length*8;b.push(0x80);while(b.length%64!=56)b.push(0);for(let i=7;i>=0;i--)b.push(i>3?0:(l>>>(i*8))&255);
+ const rr=(x,n)=>(x>>>n)|(x<<(32-n));
+ for(let o=0;o<b.length;o+=64){const w=[];for(let i=0;i<16;i++)w[i]=(b[o+i*4]<<24)|(b[o+i*4+1]<<16)|(b[o+i*4+2]<<8)|b[o+i*4+3];
+  for(let i=16;i<64;i++){const s0=rr(w[i-15],7)^rr(w[i-15],18)^(w[i-15]>>>3),s1=rr(w[i-2],17)^rr(w[i-2],19)^(w[i-2]>>>10);w[i]=(w[i-16]+s0+w[i-7]+s1)|0}
+  let[a,b2,c2,d,e,f,g,h]=H;for(let i=0;i<64;i++){const S1=rr(e,6)^rr(e,11)^rr(e,25),ch=(e&f)^(~e&g),t1=(h+S1+ch+K[i]+w[i])|0,S0=rr(a,2)^rr(a,13)^rr(a,22),mj=(a&b2)^(a&c2)^(b2&c2),t2=(S0+mj)|0;h=g;g=f;f=e;e=(d+t1)|0;d=c2;c2=b2;b2=a;a=(t1+t2)|0}
+  H[0]=(H[0]+a)|0;H[1]=(H[1]+b2)|0;H[2]=(H[2]+c2)|0;H[3]=(H[3]+d)|0;H[4]=(H[4]+e)|0;H[5]=(H[5]+f)|0;H[6]=(H[6]+g)|0;H[7]=(H[7]+h)|0}
+ return H.map(x=>(x>>>0).toString(16).padStart(8,"0")).join("")}
+const hashPw=(pw,salt)=>sha256(salt+":"+pw);
+function seed(){return{reqs:[],nid:1,tnid:1,uid:1,mult:1.5,reports:[],prices:JSON.parse(JSON.stringify(DEF_PRICE)),users:[],techs:[]}}
+let S;try{S=JSON.parse(localStorage.getItem("flash_v4")||"null")}catch(e){S=null}
+if(!S||!S.techs||!S.users)S=seed();
+const save=()=>{try{localStorage.setItem("flash_v4",JSON.stringify(S))}catch(e){}};
+let SESS={};try{SESS=JSON.parse(localStorage.getItem("flash_sess4")||"{}")}catch(e){}
+const setSess=(role,id)=>{if(id)SESS[role]=id;else delete SESS[role];try{localStorage.setItem("flash_sess4",JSON.stringify(SESS))}catch(e){}};
+const curUser=role=>S.users.find(u=>u.id===SESS[role]&&u.role===role)||null;
 const $=h=>{const d=document.createElement("div");d.innerHTML=h.trim();return d.firstChild};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const trusted=t=>t.rating>=4.7&&t.jobs>=20&&t.cancel<0.05&&t.docs;
@@ -84,25 +95,64 @@ const money=n=>Math.round(n).toLocaleString("en")+" ج.م";
 const app=document.getElementById("app");
 let draft={svc:"",urgent:false},techId=+(sessionStorage.getItem("tid")||1),openChat={};
 function ls(k,v){try{if(v===undefined)return sessionStorage.getItem(k);sessionStorage.setItem(k,v)}catch(e){}}
-function navbar(h){const items=h.startsWith("#/c")?[["#/c","🏠","طلباتي"],["#/","🔀","التبديل"]]:h.startsWith("#/t")?[["#/t","🛠️","شغلي"],["#/","🔀","التبديل"]]:h.startsWith("#/a")?[["#/a","📊","الإدارة"],["#/","🔀","التبديل"]]:[["#/","🏠","الرئيسية"],["#/c","👤","عميل"],["#/t","🛠️","فني"],["#/a","📊","مدير"]];
-  document.getElementById("nav").innerHTML=items.map(i=>`<a href="${i[0]}" class="${h===i[0]||(i[0]==="#/"&&h==="#/")?"on":""}"><b>${i[1]}</b>${i[2]}</a>`).join("")}
+function navbar(h){const role=h.startsWith("#/c")?"customer":h.startsWith("#/t")?"technician":null,u=role&&curUser(role);
+  const items=u?(role==="customer"?[["#/c","🏠","طلباتي"]]:[["#/t","🛠️","شغلي"]]).concat([["#/","🔀","التبديل"],["profile","👤","حسابي"],["logout","🚪","خروج"]]):
+   h.startsWith("#/a")?[["#/a","📊","الإدارة"],["#/","🔀","التبديل"]]:[["#/","🏠","الرئيسية"],["#/c","👤","عميل"],["#/t","🛠️","فني"],["#/a","📊","مدير"]];
+  const nv=document.getElementById("nav");nv.innerHTML=items.map(i=>`<a href="${i[0].startsWith("#")?i[0]:"javascript:void 0"}" data-act="${i[0].startsWith("#")?"":i[0]}" class="${h===i[0]?"on":""}"><b>${i[1]}</b>${i[2]}</a>`).join("");
+  nv.querySelectorAll("[data-act]").forEach(a=>{if(a.dataset.act==="profile")a.onclick=()=>profile(role);if(a.dataset.act==="logout")a.onclick=()=>{setSess(role,null);route()}})}
 function route(){const h=location.hash||"#/";navbar(h);
   document.getElementById("ttl").textContent=h.startsWith("#/c")?"فلاش - العميل":h.startsWith("#/t")?"فلاش للفنيين":h.startsWith("#/a")?"إدارة فلاش":"فلاش";
-  (h.startsWith("#/c")?customer:h.startsWith("#/t")?tech:h.startsWith("#/a")?admin:landing)();scrollTo(0,0)}
-const banner=()=>'<div class="banner">نسخة تجريبية: كل البيانات محفوظة في متصفحك أنت بس. جرّب الدورة كاملة بنفسك كعميل وفني ومدير.</div>';
+  (h.startsWith("#/c")?()=>gate("customer",customer):h.startsWith("#/t")?()=>gate("technician",tech):h.startsWith("#/a")?admin:landing)();scrollTo(0,0)}
+const banner=()=>'<div class="banner">نسخة عرض أولية: الحسابات والطلبات محفوظة على جهازك فقط، ومش بتظهر لمستخدمين على أجهزة تانية.</div>';
 function modal(html,mount){const o=$(`<div class="ov"><div class="sheet">${html}</div></div>`);o.onclick=e=>{if(e.target===o)o.remove()};document.body.appendChild(o);mount&&mount(o);return o}
 function landing(){app.innerHTML=`<div class="hero"><h2>فني موثوق لحد باب بيتك</h2><p>اطلب أي خدمة، استلم عروض أسعار من فنيين قريبين، وفاوض بأمان.</p>
  <div class="trust"><span>✔ فنيين موثقين</span><span>💰 أسعار عادلة</span><span>📍 تتبع مباشر</span><span>🛡️ ضمان ${WARRANTY} أيام</span></div></div>${banner()}
- <div class="big"><a href="#/c"><i>🏠</i><div><b>أنا عميل</b><small>اطلب خدمة واستلم العروض وفاوض</small></div></a>
- <a href="#/t"><i>🛠️</i><div><b>أنا فني</b><small>سجّل، شوف الطلبات وابعت عروضك</small></div></a>
+ <div class="big"><a href="#/c"><i>🏠</i><div><b>أنا عميل</b><small>سجّل حسابك، اطلب خدمة وفاوض على السعر</small></div></a>
+ <a href="#/t"><i>🛠️</i><div><b>أنا فني</b><small>سجّل كفني، شوف الطلبات وابعت عروضك</small></div></a>
  <a href="#/a"><i>📊</i><div><b>المدير</b><small>اعتماد الفنيين، الأسعار، والبلاغات (بكلمة سر)</small></div></a></div>`}
 function suggest(svc,urgent){const p=S.prices[svc]||DEF_PRICE[svc],m=urgent?S.mult:1;return[p[0]*m,p[1]*m]}
+/* ===== accounts ===== */
+const PHONE_RE=/^01[0125]\d{8}$/;
+function gate(role,fn){if(curUser(role))return fn();authScreen(role,"login")}
+let authPick=[];
+function authScreen(role,mode){const isT=role==="technician",title=isT?"فني":"عميل";
+ app.innerHTML=banner()+`<div class="card"><div class="row"><button class="${mode==="login"?"":"sec"} sp" id="m1">تسجيل الدخول</button><button class="${mode==="reg"?"":"sec"} sp" id="m2">حساب جديد</button></div>
+ <h3 style="margin-top:14px">${mode==="login"?"دخول ":"إنشاء حساب "}${title}</h3>
+ ${mode==="reg"?'<label>الاسم</label><input id="nm" autocomplete="name">':""}
+ <label>رقم الموبايل</label><input id="ph" inputmode="numeric" placeholder="01XXXXXXXXX" autocomplete="tel">
+ <label>كلمة السر</label><input id="pw" type="password" placeholder="6 حروف أو أرقام على الأقل" autocomplete="${mode==="reg"?"new-password":"current-password"}">
+ ${mode==="reg"&&isT?`<label>التخصصات (اختار لحد 3)</label><div class="grid" id="rs">${Object.keys(SERVICES).map(k=>`<div class="svc ${authPick.includes(k)?"on":""}" data-k="${k}" style="padding:6px"><div class="ic" style="width:34px;height:34px;font-size:18px">${SERVICES[k]}</div>${k}</div>`).join("")}</div>
+  <label>سنين الخبرة</label><input id="yr" type="number" min="0" max="50"><label><input type="checkbox" id="dc">أقر إني هرفع صورة البطاقة وصحيفة الحالة الجنائية للمراجعة</label>
+  <div class="mut">حسابك بيفضل «بانتظار الاعتماد» لحد ما المدير يوافق.</div>`:""}
+ <p><button id="ok" style="width:100%">${mode==="login"?"دخول":"إنشاء الحساب"}</button></p><div id="er" style="color:var(--red);font-size:13px"></div>
+</div>`;
+ document.getElementById("m1").onclick=()=>authScreen(role,"login");document.getElementById("m2").onclick=()=>authScreen(role,"reg");
+ document.querySelectorAll("#rs .svc").forEach(e=>e.onclick=()=>{const k=e.dataset.k,i=authPick.indexOf(k);if(i>=0){authPick.splice(i,1);e.classList.remove("on")}else if(authPick.length<3){authPick.push(k);e.classList.add("on")}});
+ const err=t=>document.getElementById("er").textContent=t,val=id=>(document.getElementById(id)||{}).value||"";
+ document.getElementById("ok").onclick=()=>{const ph=val("ph").trim(),pw=val("pw");
+  if(!PHONE_RE.test(ph))return err("رقم الموبايل لازم يبدأ بـ 01 ويكون 11 رقم.");
+  if(mode==="login"){const u=S.users.find(x=>x.phone===ph&&x.role===role);if(!u||hashPw(pw,u.salt)!==u.ph)return err("الرقم أو كلمة السر غلط.");setSess(role,u.id);return route()}
+  const nm=val("nm").trim();if(nm.length<3)return err("اكتب اسمك (3 حروف على الأقل).");if(pw.length<6)return err("كلمة السر لازم تكون 6 على الأقل.");
+  if(S.users.some(x=>x.phone===ph&&x.role===role))return err("الرقم ده مسجّل قبل كده. سجّل دخول.");
+  if(isT){if(!authPick.length)return err("اختار تخصص واحد على الأقل.");if(!document.getElementById("dc").checked)return err("لازم توافق على إقرار المستندات.")}
+  const salt=Math.random().toString(36).slice(2,10),u={id:S.uid++,role,name:nm,phone:ph,salt,ph:hashPw(pw,salt)};if(!isT)u.addrs=[];S.users.push(u);
+  if(isT){S.techs.push({id:S.tnid++,uid:u.id,name:nm,bio:"",yrs:+val("yr")||0,svc:authPick.slice(),rating:0,jobs:0,cancel:0,approved:false,online:true,docs:true});authPick=[]}
+  setSess(role,u.id);save();route()}}
+function profile(role){const u=curUser(role);if(!u)return;const t=role==="technician"?S.techs.find(x=>x.uid===u.id):null;
+ modal(`<h3>👤 حسابي</h3><label>الاسم</label><input id="pn" value="${esc(u.name)}"><div class="mut">الموبايل: ${esc(u.phone)} (ثابت)</div>
+ ${t?`<label>نبذة عنك</label><textarea id="pb" rows="2">${esc(t.bio||"")}</textarea><label>سنين الخبرة</label><input id="py" type="number" value="${t.yrs}">`:`<label>عناويني المحفوظة</label><div id="al">${(u.addrs||[]).map((a,i)=>`<div class="row"><span class="sp">📍 ${esc(a)}</span><button class="no sm" data-d="${i}">حذف</button></div>`).join("")||'<div class="mut">مفيش عناوين محفوظة. بتتحفظ تلقائي لما تعلّم «احفظ العنوان» في الطلب.</div>'}</div>`}
+ <label>تغيير كلمة السر (اختياري)</label><input id="np" type="password" placeholder="كلمة سر جديدة">
+ <div class="row" style="margin-top:12px"><button class="ok sp" id="sv">حفظ</button><button class="sec" id="cl">إغلاق</button></div>`,ov=>{
+  ov.querySelector("#cl").onclick=()=>ov.remove();
+  ov.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{u.addrs.splice(+b.dataset.d,1);save();ov.remove();profile(role)});
+  ov.querySelector("#sv").onclick=()=>{const n=ov.querySelector("#pn").value.trim();if(n.length<3)return alert("اكتب الاسم");u.name=n;if(t){t.name=n;t.bio=ov.querySelector("#pb").value;t.yrs=+ov.querySelector("#py").value||0}
+   const np=ov.querySelector("#np").value;if(np){if(np.length<6)return alert("كلمة السر 6 على الأقل");u.ph=hashPw(np,u.salt)}save();ov.remove();route()}})}
 /* ===== customer ===== */
-function customer(){const mine=S.reqs.slice().reverse();
- app.innerHTML=banner()+`<div class="card"><h3>اطلب خدمة</h3><div class="grid">${Object.keys(SERVICES).map(k=>`<div class="svc ${draft.svc===k?"on":""}" data-k="${k}"><div class="ic">${SERVICES[k]}</div>${k}</div>`).join("")}</div>
+function customer(){const U=curUser("customer"),mine=S.reqs.filter(r=>r.cid===U.id).reverse();
+ app.innerHTML=banner()+`<h3 style="margin:0 0 10px">أهلاً ${esc(U.name.split(" ")[0])} 👋</h3><div class="card"><h3>اطلب خدمة</h3><div class="grid">${Object.keys(SERVICES).map(k=>`<div class="svc ${draft.svc===k?"on":""}" data-k="${k}"><div class="ic">${SERVICES[k]}</div>${k}</div>`).join("")}</div>
  <div id="sg"></div>
  <label>وصف المشكلة</label><textarea id="d" rows="3" placeholder="مثلاً: ماسورة المطبخ بتسرّب"></textarea>
- <label>العنوان (اكتبه بحرية)</label><input id="ad" placeholder="مثلاً: 15 شارع النصر، مدينة نصر، القاهرة">
+ <label>العنوان (اكتبه بحرية)</label><input id="ad" list="al" placeholder="مثلاً: 15 شارع النصر، مدينة نصر، القاهرة"><datalist id="al">${(U.addrs||[]).map(a=>`<option value="${esc(a)}">`).join("")}</datalist><label><input type="checkbox" id="sa">احفظ العنوان لطلبات جاية</label>
  <label><input type="checkbox" id="em">🚨 طلب طارئ (يتضاعف السعر ×${S.mult} وبيوصل للأقرب فوراً)</label>
  <p><button id="go" style="width:100%">إرسال الطلب</button></p></div>
  <h3>طلباتي</h3>${mine.length?"":'<p class="mut">لسه معندكش طلبات.</p>'}<div id="list"></div>`;
@@ -112,7 +162,8 @@ function customer(){const mine=S.reqs.slice().reverse();
  document.getElementById("em").onchange=sg;sg();
  document.getElementById("go").onclick=()=>{const d=document.getElementById("d").value.trim(),a=document.getElementById("ad").value.trim();
   if(!draft.svc)return alert("اختار الخدمة الأول");if(d.length<5)return alert("اكتب وصف للمشكلة");if(a.length<5)return alert("اكتب العنوان");
-  S.reqs.push({id:S.nid++,svc:draft.svc,desc:d,addr:a,urgent:document.getElementById("em").checked,status:"open",offers:[],tech:null,price:null,eta:0,chat:[],rating:0,tags:[],comment:""});draft.svc="";save();customer()};
+  if(document.getElementById("sa").checked&&!(U.addrs||[]).includes(a)){U.addrs=(U.addrs||[]).concat(a)}
+  S.reqs.push({id:S.nid++,cid:U.id,svc:draft.svc,desc:d,addr:a,urgent:document.getElementById("em").checked,status:"open",offers:[],tech:null,price:null,eta:0,chat:[],rating:0,tags:[],comment:""});draft.svc="";save();customer()};
  const L=document.getElementById("list");mine.forEach(r=>L.appendChild(custCard(r)))}
 const hist=o=>o.hist.map(h=>(h.by==="t"?"الفني":"أنت")+" "+money(h.p)).join(" ← ");
 function chatBox(r,me,quick){const wrap=$(`<div><div class="chat">${r.chat.length?r.chat.map(m=>`<div class="msg ${m.by===me?"me":"ot"}">${esc(m.t)}</div>`).join(""):'<div class="mut">ابدأ المحادثة. أرقام التليفون مخفية، الكلام بيتم من داخل التطبيق.</div>'}</div>
@@ -163,20 +214,14 @@ function custCard(r){const el=$("<div class='card'></div>"),stIdx=STEPS.findInde
  const ag=el.querySelector("[data-again]");if(ag)ag.onclick=()=>{draft.svc=r.svc;location.hash="#/c";window.scrollTo(0,0);customer();alert("اختار الوصف والعنوان وابعت الطلب، وهيوصل لنفس الفني ولباقي الفنيين.")};
  return el}
 /* ===== technician ===== */
-function tech(){const me=S.techs.find(x=>x.id===techId)||S.techs[0];
- app.innerHTML=banner()+`<div class="card"><label style="margin-top:0">اختار فني للتجربة</label><select id="who">${S.techs.map(t=>`<option value="${t.id}" ${t.id===me.id?"selected":""}>${esc(t.name)}${t.approved?"":" (بانتظار الاعتماد)"}</option>`).join("")}</select>
+function tech(){const TU=curUser("technician"),me=S.techs.find(x=>x.uid===TU.id);
+ app.innerHTML=banner()+`<div class="card"><div class="row"><b style="font-size:17px">${esc(me.name)}</b>${me.approved?'<span class="chip g">معتمد</span>':'<span class="chip a">بانتظار الاعتماد</span>'}</div>
  <div class="row" style="margin-top:8px"><span class="chip">⭐ ${me.rating}</span><span class="chip">${me.jobs} شغلانة</span><span class="chip">${me.yrs} سنين خبرة</span>${trusted(me)?'<span class="chip g">✔ فني موثوق</span>':`<span class="chip a">للشارة: ${Math.max(0,20-me.jobs)} شغلانة أخرى + تقييم 4.7+ + إلغاء أقل من 5%</span>`}</div>
  <div class="mut">تخصصاته: ${me.svc.join("، ")}</div>
  <label><input type="checkbox" id="on" ${me.online?"checked":""}>متاح لاستقبال الطلبات (Online)</label></div><div id="b"></div>
- <div class="card"><h3>➕ تسجيل فني جديد</h3><input id="rn" placeholder="الاسم"><label>التخصصات (اختار لحد 3)</label><div class="grid" id="rs">${Object.keys(SERVICES).map(k=>`<div class="svc" data-k="${k}" style="padding:6px"><div class="ic" style="width:34px;height:34px;font-size:18px">${SERVICES[k]}</div>${k}</div>`).join("")}</div>
- <label>سنين الخبرة</label><input id="ry" type="number" min="0" max="50" placeholder="مثلاً 5"><label><input type="checkbox" id="rd">أقر إني هرفع صورة البطاقة وصحيفة الحالة الجنائية للمراجعة (تجريبي)</label>
- <p><button id="rg" style="width:100%">إرسال طلب التسجيل</button></p><div class="mut">الحساب بيفضل «بانتظار الاعتماد» لحد ما المدير يوافق.</div></div>`;
- document.getElementById("who").onchange=e=>{techId=+e.target.value;ls("tid",techId);tech()};
+`;
  document.getElementById("on").onchange=e=>{me.online=e.target.checked;save();tech()};
- const picked=[];document.querySelectorAll("#rs .svc").forEach(e=>e.onclick=()=>{const k=e.dataset.k,i=picked.indexOf(k);if(i>=0){picked.splice(i,1);e.classList.remove("on")}else if(picked.length<3){picked.push(k);e.classList.add("on")}});
- document.getElementById("rg").onclick=()=>{const n=document.getElementById("rn").value.trim(),y=+document.getElementById("ry").value;if(n.length<3||!picked.length||!document.getElementById("rd").checked)return alert("اكتب الاسم، اختار تخصص واحد على الأقل، ووافق على إقرار المستندات");
-  S.techs.push({id:S.tnid++,name:n,phone:"",yrs:y||0,svc:picked.slice(),rating:0,jobs:0,cancel:0,approved:false,online:true,docs:true});techId=S.tnid-1;ls("tid",techId);save();tech();alert("اتسجلت! افتح صفحة المدير واعتمد الحساب.")};
- const B=document.getElementById("b");if(!me.approved){B.innerHTML='<div class="card">حسابك بانتظار اعتماد المدير. افتح صفحة المدير (بكلمة السر) واعتمده.</div>';return}
+ const B=document.getElementById("b");if(!me.approved){B.innerHTML='<div class="card">حسابك بانتظار اعتماد المدير. لما يوافق هتبدأ تستقبل الطلبات. (للتجربة: افتح صفحة المدير بكلمة السر واعتمد الحساب.)</div>';return}
  if(!me.online)B.innerHTML='<div class="card">انت Offline. فعّل «متاح» عشان تستقبل طلبات.</div>';
  const open=me.online?S.reqs.filter(r=>r.status==="open"&&me.svc.includes(r.svc)).sort((a,b)=>b.urgent-a.urgent):[];
  B.insertAdjacentHTML("beforeend","<h3>طلبات متاحة</h3>");if(!open.length)B.insertAdjacentHTML("beforeend",'<p class="mut">مفيش طلبات في تخصصك دلوقتي. اطلب خدمة كعميل من تخصصه.</p>');
@@ -198,9 +243,8 @@ function tech(){const me=S.techs.find(x=>x.id===techId)||S.techs[0];
   if(openChat["t"+r.id])el.querySelector("#cb").appendChild(chatBox(r,"t",QUICK_T))});
  B.insertAdjacentHTML("beforeend",`<div class="card"><b>💰 الأرباح</b><div class="mut">مكتملة: ${money(earn)} • جاري: ${money(pend)}</div></div>`)}
 /* ===== admin ===== */
-async function sha(s){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
 function admin(){if(ls("adm")!=="1"){app.innerHTML=banner()+`<div class="card"><h3>🔐 دخول المدير</h3><input type="password" id="pw" placeholder="كلمة السر"><p><button id="lg" style="width:100%">دخول</button></p><div class="mut" id="er"></div></div>`;
-  const go=async()=>{try{if(await sha(document.getElementById("pw").value)===ADMIN_HASH){ls("adm","1");admin()}else document.getElementById("er").textContent="كلمة السر غلط."}catch(e){document.getElementById("er").textContent="افتح الموقع من رابط https."}};
+  const go=()=>{if(sha256("flash-admin:"+document.getElementById("pw").value)===ADMIN_HASH){ls("adm","1");admin()}else document.getElementById("er").textContent="كلمة السر غلط."};
   document.getElementById("lg").onclick=go;document.getElementById("pw").onkeydown=e=>{if(e.key==="Enter")go()};return}
  const done=S.reqs.filter(r=>r.status==="done"),rev=done.reduce((a,r)=>a+r.price*FEE,0),pend=S.techs.filter(t=>!t.approved).length;
  app.innerHTML=banner()+`<div class="card stat"><div><b>${S.reqs.length}</b>طلب</div><div><b>${done.length}</b>مكتمل</div><div><b>${Math.round(rev)}</b>عمولة ج.م</div><div><b>${pend}</b>بانتظار اعتماد</div></div>
@@ -212,7 +256,7 @@ function admin(){if(ls("adm")!=="1"){app.innerHTML=banner()+`<div class="card"><
  document.getElementById("pt").innerHTML=Object.keys(SERVICES).map(k=>`<div class="row" style="margin-top:6px"><span style="width:140px">${SERVICES[k]} ${k}</span><input type="number" data-lo="${k}" value="${S.prices[k][0]}" style="width:90px"><input type="number" data-hi="${k}" value="${S.prices[k][1]}" style="width:90px"></div>`).join("");
  document.getElementById("ps").onclick=()=>{document.querySelectorAll("[data-lo]").forEach(i=>S.prices[i.dataset.lo][0]=+i.value);document.querySelectorAll("[data-hi]").forEach(i=>S.prices[i.dataset.hi][1]=+i.value);S.mult=Math.max(1,+document.getElementById("mu").value||1.5);save();alert("تم الحفظ")};
  const Q=document.getElementById("r");if(!S.reqs.length)Q.innerHTML='<p class="mut">مفيش طلبات لسه.</p>';S.reqs.slice().reverse().slice(0,15).forEach(r=>Q.insertAdjacentHTML("beforeend",`<div class="card"><b>${SERVICES[r.svc]} ${esc(r.svc)}</b> <span class="chip">${r.status}</span><div class="mut">${esc(r.addr)} • ${r.offers.length} عرض${r.price?" • "+money(r.price):""}</div></div>`));
- document.getElementById("rs").onclick=()=>{if(confirm("مسح كل البيانات؟")){S=seed();save();admin()}};document.getElementById("lo").onclick=()=>{ls("adm","0");admin()}}
+ document.getElementById("rs").onclick=()=>{if(confirm("مسح كل البيانات؟")){S=seed();SESS={};try{localStorage.removeItem("flash_sess4")}catch(e){}save();admin()}};document.getElementById("lo").onclick=()=>{ls("adm","0");admin()}}
 addEventListener("hashchange",route);route();
 if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
